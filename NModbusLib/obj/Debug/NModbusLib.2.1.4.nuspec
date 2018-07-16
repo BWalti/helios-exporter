@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>NModbusLib</id>
+    <version>2.1.4</version>
+    <authors>Dr. Peter Trimmel</authors>
+    <owners>Dr. Peter Trimmel</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
+    <description>Library providing attributes, data conversion, and data extensions to NModbus4.</description>
+    <releaseNotes>Initial release using .Net Core 2.0</releaseNotes>
+    <copyright>Copyright (c) 2017 Dr. Peter Trimmel</copyright>
+    <tags>modbus attributes extensions</tags>
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Microsoft.Extensions.Logging" version="2.0.0" exclude="Build,Analyzers" />
+        <dependency id="NModbus" version="3.0.48" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Users\peter\Documents\Visual Studio 2017\Projects\HomeControl\Modbus\NModbusLib\bin\Debug\netstandard2.0\NModbusLib.dll" target="lib\netstandard2.0\NModbusLib.dll" />
+    <file src="C:\Users\peter\Documents\Visual Studio 2017\Projects\HomeControl\Modbus\NModbusLib\bin\Debug\netstandard2.0\DataValueLib.xml" target="lib\netstandard2.0\DataValueLib.xml" />
+  </files>
+</package>
