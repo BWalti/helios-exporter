@@ -2,7 +2,7 @@
 Using the familiar development environments such as Visual Studio and C# for the development of application based on the.NET Core 2.1 framework makes the implementation of tools and web applications even easier. Leveraging the Windows 10 IoT Core platform such applications can be deployed to small devices such as the Raspberry PI 2 or PI 3.
 
 ## Modbus
-A typical scenario for a Raspberry PI based application is home automation. The communication to various devices is key to the development of IoT applications. Many devices provide a Modbus interface either using TCP/IP or serial interfaces using Modbus RTU (see Modbus at Wikipedia).
+A typical scenario for a Raspberry PI based application is home automation. The communication to various devices is key to the development of IoT applications. Many devices provide a Modbus interface either using TCP/IP or serial interfaces using Modbus RTU (see [Modbus](https://en.wikipedia.org/wiki/Modbus) at Wikipedia).
 
 ## Goal
 Using various libraries from the community and the.NET Core 2.1 framework the implementation of applications to read and write Modbus slaves either via a command line application or via a web based interface is the main provides simple tools for the testing and development of monitoring and control applications.
