@@ -1,0 +1,19 @@
+extensions: designer.cs generated.cs
+extensions: .cs
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="%FileName%" company="DTV-Online">
+//   Copyright(c) %CurrentYear% Dr. Peter Trimmel. All rights reserved.
+// </copyright>
+// <license>
+// Licensed under the MIT license. See the LICENSE file in the project root for more information.
+// </license>
+// --------------------------------------------------------------------------------------------------------------------
+extensions:  .xml .config .xsd
+<!--
+  <copyright file="%FileName%" company="DTV-Online">
+    Copyright(c) %CurrentYear% Dr. Peter Trimmel. All rights reserved.
+  </copyright>
+  <license>
+  Licensed under the MIT license. See the LICENSE file in the project root for more information.
+  </license>
+-->
