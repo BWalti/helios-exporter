@@ -31,17 +31,19 @@
         {
             ConfigureServices();
 
-            Log.Information("Querying temperatures...");
+            do
+            {
+                Log.Information("Querying temperatures...");
 
-            var aussenluft = await QueryHeliosValue(Aussenluft);
-            var zuluft = await QueryHeliosValue(Zuluft);
-            var fortluft = await QueryHeliosValue(Fortluft);
-            var abluft = await QueryHeliosValue(Abluft);
+                var aussenluft = await QueryHeliosValue(Aussenluft);
+                var zuluft = await QueryHeliosValue(Zuluft);
+                var fortluft = await QueryHeliosValue(Fortluft);
+                var abluft = await QueryHeliosValue(Abluft);
 
-            Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+                Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+            } while (Console.ReadKey().Key == ConsoleKey.F5);
 
             Log.CloseAndFlush();
-            Console.ReadKey();
         }
 
         private static void ConfigureServices()
