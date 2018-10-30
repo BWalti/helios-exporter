@@ -40,12 +40,17 @@
                 {
                     Log.Information("Querying temperatures...");
 
+                    var uhrzeit = await QueryHeliosValue(client, HeliosVariables.Uhrzeit);
                     var aussenluft = await QueryHeliosValue(client, HeliosVariables.AussenluftTemperatur);
                     var zuluft = await QueryHeliosValue(client, HeliosVariables.ZuluftTemperatur);
                     var fortluft = await QueryHeliosValue(client, HeliosVariables.FortluftTemperatur);
                     var abluft = await QueryHeliosValue(client, HeliosVariables.AbluftTemperatur);
 
-                    Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+                    var a = await QueryHeliosValue(client, HeliosVariables.Lüfterstufe);
+                    var b = await QueryHeliosValue(client, HeliosVariables.ProzentualeLüfterstufe);
+
+
+                    Log.Information($"{uhrzeit} - {aussenluft} / {zuluft} / {fortluft} / {abluft}");
                 } while (Console.ReadKey().Key == ConsoleKey.F5);
 
             }
@@ -71,7 +76,7 @@
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
         }
 
-        private static async Task<string> QueryHeliosValue(TcpClient client, VariableDeclaration parameter)
+        private static async Task<T> QueryHeliosValue<T>(TcpClient client, VariableDeclaration<T> parameter)
         {
             Log.Debug($"Querying {parameter.Code}...");
             var bytes = Encoding.ASCII.GetBytes($"{parameter.Code}\0");
@@ -90,11 +95,11 @@
 
                 if (TryExtractValue(parameter.Code, decoded, out var value))
                 {
-                    return value;
+                    return (T)Convert.ChangeType(value, typeof(T));
                 }
             }
 
-            return string.Empty;
+            return default;
         }
 
         private static bool TryExtractValue(string parameter, string decoded, out string value)
