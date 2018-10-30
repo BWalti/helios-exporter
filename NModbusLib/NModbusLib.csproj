@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -14,7 +14,7 @@
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Release using .Net Core 2.0</PackageReleaseNotes>
-    <PackageOutputPath>C:\Program Files (x86)\NuGet Server\server\Packages</PackageOutputPath>
+    <PackageOutputPath>..\server\Packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
