@@ -4,21 +4,20 @@ namespace Helios_PoC
 {
     public class VariableDeclaration
     {
+        protected object min;
+        protected object max;
+
         public string Code { get; }
 
-        public int RegisterCount { get; }
+        public ushort RegisterCount { get; }
 
         public string Description { get; }
-
-        public object Min { get; }
-
-        public object Max { get; }
 
         public AccessMode Access { get; }
 
         public Type ValueType { get; }
 
-        public VariableDeclaration(string code, int registerCount, string description, AccessMode access,
+        public VariableDeclaration(string code, ushort registerCount, string description, AccessMode access,
             Type valueType, string min, string max)
         {
             Code = code;
@@ -32,13 +31,25 @@ namespace Helios_PoC
                 var minValue = Convert.ChangeType(min, valueType);
                 var maxValue = Convert.ChangeType(max, valueType);
 
-                Min = minValue;
-                Max = maxValue;
+                this.min = minValue;
+                this.max = maxValue;
             }
             catch (Exception)
             {
                 // no valid boundaries?
             }
         }
+    }
+
+    public class VariableDeclaration<T> : VariableDeclaration
+    {
+        public VariableDeclaration(string code, ushort registerCount, string description, AccessMode access, string min, string max) 
+            : base(code, registerCount, description, access, typeof(T), min, max)
+        {
+        }
+
+        public T Min => (T) this.min;
+
+        public T Max => (T) this.max;
     }
 }

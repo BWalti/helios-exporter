@@ -13,40 +13,37 @@
     using NModbus;
     using Serilog;
 
+    public static class HeliosDefaults
+    {
+        public const int Offset = 1;
+        public const byte SlaveAddress = 180;
+        public const int Port = 502;
+    }
+
     public class Program
     {
-        private const int Offset = 1;
-        private const byte SlaveAddress = 180;
-        private const int Port = 502;
         private const int TimeoutMs = 2000;
 
-        // see reference: https://www.easycontrols.net/en/service/downloads/send/4-software/16-modbus-dokumentation-f%C3%BCr-kwl-easycontrols-ger%C3%A4te
-        private const string Aussenluft = "v00104";
-        private const string Zuluft = "v00105";
-        private const string Fortluft = "v00106";
-        private const string Abluft = "v00107";
         private static readonly IPAddress IpAddress = IPAddress.Parse("192.168.0.228");
 
         public static async Task Main(string[] args)
         {
-            var declarations = HeliosDefaults.GetVariableDeclarations().ToList();
-
             ConfigureServices();
 
             using (var client = new TcpClient())
             {
                 client.ReceiveTimeout = TimeoutMs;
                 client.SendTimeout = TimeoutMs;
-                client.Client.Connect(IpAddress, Port);
+                client.Client.Connect(IpAddress, HeliosDefaults.Port);
 
                 do
                 {
                     Log.Information("Querying temperatures...");
 
-                    var aussenluft = await QueryHeliosValue(client, Aussenluft);
-                    var zuluft = await QueryHeliosValue(client, Zuluft);
-                    var fortluft = await QueryHeliosValue(client, Fortluft);
-                    var abluft = await QueryHeliosValue(client, Abluft);
+                    var aussenluft = await QueryHeliosValue(client, HeliosVariables.AussenluftTemperatur);
+                    var zuluft = await QueryHeliosValue(client, HeliosVariables.ZuluftTemperatur);
+                    var fortluft = await QueryHeliosValue(client, HeliosVariables.FortluftTemperatur);
+                    var abluft = await QueryHeliosValue(client, HeliosVariables.AbluftTemperatur);
 
                     Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
                 } while (Console.ReadKey().Key == ConsoleKey.F5);
@@ -74,10 +71,10 @@
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
         }
 
-        private static async Task<string> QueryHeliosValue(TcpClient client, string parameter)
+        private static async Task<string> QueryHeliosValue(TcpClient client, VariableDeclaration parameter)
         {
-            Log.Debug($"Querying {parameter}...");
-            var bytes = Encoding.ASCII.GetBytes($"{parameter}\0");
+            Log.Debug($"Querying {parameter.Code}...");
+            var bytes = Encoding.ASCII.GetBytes($"{parameter.Code}\0");
             var ushorts = ToUShortArray(bytes);
 
             if (client.Connected)
@@ -85,13 +82,13 @@
                 var factory = new ModbusFactory();
                 var modbus = factory.CreateMaster(client);
 
-                await modbus.WriteMultipleRegistersAsync(SlaveAddress, Offset, ushorts);
-                var result = await modbus.ReadHoldingRegistersAsync(SlaveAddress, Offset, 8);
+                await modbus.WriteMultipleRegistersAsync(HeliosDefaults.SlaveAddress, HeliosDefaults.Offset, ushorts);
+                var result = await modbus.ReadHoldingRegistersAsync(HeliosDefaults.SlaveAddress, HeliosDefaults.Offset, parameter.RegisterCount);
 
                 bytes = FromShortArray(result);
                 var decoded = Encoding.ASCII.GetString(bytes);
 
-                if (TryExtractValue(parameter, decoded, out var value))
+                if (TryExtractValue(parameter.Code, decoded, out var value))
                 {
                     return value;
                 }
