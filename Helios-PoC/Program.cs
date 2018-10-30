@@ -29,19 +29,29 @@
 
         public static async Task Main(string[] args)
         {
+            var declarations = HeliosDefaults.GetVariableDeclarations().ToList();
+
             ConfigureServices();
 
-            do
+            using (var client = new TcpClient())
             {
-                Log.Information("Querying temperatures...");
+                client.ReceiveTimeout = TimeoutMs;
+                client.SendTimeout = TimeoutMs;
+                client.Client.Connect(IpAddress, Port);
 
-                var aussenluft = await QueryHeliosValue(Aussenluft);
-                var zuluft = await QueryHeliosValue(Zuluft);
-                var fortluft = await QueryHeliosValue(Fortluft);
-                var abluft = await QueryHeliosValue(Abluft);
+                do
+                {
+                    Log.Information("Querying temperatures...");
 
-                Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
-            } while (Console.ReadKey().Key == ConsoleKey.F5);
+                    var aussenluft = await QueryHeliosValue(client, Aussenluft);
+                    var zuluft = await QueryHeliosValue(client, Zuluft);
+                    var fortluft = await QueryHeliosValue(client, Fortluft);
+                    var abluft = await QueryHeliosValue(client, Abluft);
+
+                    Log.Information($"Results: {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+                } while (Console.ReadKey().Key == ConsoleKey.F5);
+
+            }
 
             Log.CloseAndFlush();
         }
@@ -64,44 +74,49 @@
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
         }
 
-        private static async Task<string> QueryHeliosValue(string parameter)
+        private static async Task<string> QueryHeliosValue(TcpClient client, string parameter)
         {
             Log.Debug($"Querying {parameter}...");
             var bytes = Encoding.ASCII.GetBytes($"{parameter}\0");
-
             var ushorts = ToUShortArray(bytes);
 
-            using (var client = new TcpClient())
+            if (client.Connected)
             {
-                client.ReceiveTimeout = TimeoutMs;
-                client.SendTimeout = TimeoutMs;
-                client.Client.Connect(IpAddress, Port);
+                var factory = new ModbusFactory();
+                var modbus = factory.CreateMaster(client);
 
-                if (client.Connected)
+                await modbus.WriteMultipleRegistersAsync(SlaveAddress, Offset, ushorts);
+                var result = await modbus.ReadHoldingRegistersAsync(SlaveAddress, Offset, 8);
+
+                bytes = FromShortArray(result);
+                var decoded = Encoding.ASCII.GetString(bytes);
+
+                if (TryExtractValue(parameter, decoded, out var value))
                 {
-                    var factory = new ModbusFactory();
-                    var modbus = factory.CreateMaster(client);
-
-                    await modbus.WriteMultipleRegistersAsync(SlaveAddress, Offset, ushorts);
-                    var result = await modbus.ReadHoldingRegistersAsync(SlaveAddress, Offset, 8);
-
-                    bytes = FromShortArray(result);
-                    var decoded = Encoding.ASCII.GetString(bytes);
-
-                    if (decoded.StartsWith(parameter + "="))
-                    {
-                        var startIndex = parameter.Length + 1;
-                        var indexOfNull =
-                            decoded.IndexOf("\0", startIndex, StringComparison.InvariantCultureIgnoreCase);
-
-                        var value = decoded.Substring(startIndex, indexOfNull - startIndex);
-                        Log.Debug($"Value: {value}");
-                        return value;
-                    }
+                    return value;
                 }
             }
 
             return string.Empty;
+        }
+
+        private static bool TryExtractValue(string parameter, string decoded, out string value)
+        {
+            value = string.Empty;
+
+            if (decoded.StartsWith(parameter + "="))
+            {
+                var startIndex = parameter.Length + 1;
+                var indexOfNull = decoded.IndexOf("\0", startIndex, StringComparison.InvariantCulture);
+
+                value = decoded.Substring(startIndex, indexOfNull - startIndex);
+                Log.Debug($"Value: {value}");
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static ushort[] ToUShortArray(IEnumerable<byte> input)
@@ -133,19 +148,6 @@
                 // not quite sure why I currently need to swap:
                 return BitConverter.GetBytes(s).Swap();
             }).ToArray();
-        }
-    }
-
-    public static class ByteArrayExtensions
-    {
-        public static byte[] Swap(this byte[] array)
-        {
-            if (array.Length != 2)
-            {
-                throw new Exception("Only byte arrays with length 2 are possible to beeing swapped.");
-            }
-
-            return new[] {array[1], array[0]};
         }
     }
 }
