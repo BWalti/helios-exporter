@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NModbusRTU", "NModbusRTU\NM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NModbusTCP", "NModbusTCP\NModbusTCP.csproj", "{8AF4D4D4-2AD1-495B-BB38-88AE67C6FAA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helios-PoC", "Helios-PoC\Helios-PoC.csproj", "{267D813F-A23C-4E9B-AB2F-63311581DC80}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Helios-PoC", "Helios-PoC\Helios-PoC.csproj", "{267D813F-A23C-4E9B-AB2F-63311581DC80}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{99BC11D8-F96C-4589-BD49-0C3A33244589}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{267D813F-A23C-4E9B-AB2F-63311581DC80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{267D813F-A23C-4E9B-AB2F-63311581DC80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{267D813F-A23C-4E9B-AB2F-63311581DC80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99BC11D8-F96C-4589-BD49-0C3A33244589}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99BC11D8-F96C-4589-BD49-0C3A33244589}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99BC11D8-F96C-4589-BD49-0C3A33244589}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99BC11D8-F96C-4589-BD49-0C3A33244589}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -28,6 +28,7 @@
 
         public static async Task Main(string[] args)
         {
+            ConfigureApplication();
             ConfigureServices();
 
             var metricServer = new MetricServer("0.0.0.0", 49091);
@@ -47,11 +48,11 @@
                 Task.Run(
                     () =>
                         {
-                            while(Console.ReadKey().Key != ConsoleKey.Escape)
-                            {
-                            }
+                            //while(Console.ReadKey().Key != ConsoleKey.Escape)
+                            //{
+                            //}
 
-                            cts.Cancel();
+                            //cts.Cancel();
                         }),
                 Task.Run(
                     async () =>
@@ -104,6 +105,15 @@
             Log.CloseAndFlush();
         }
 
+        private static void ConfigureApplication()
+        {
+            var ci = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = ci;
+            Thread.CurrentThread.CurrentUICulture = ci;
+
+            var changeType = Convert.ChangeType("14.0", typeof(float));
+        }
+
         private static void ConfigureServices()
         {
             // Read the application settings file.
@@ -147,8 +157,13 @@
                 bytes = FromShortArray(result);
                 var decoded = Encoding.ASCII.GetString(bytes);
 
+                Log.Information($"Decoded: {decoded}");
+
                 if (TryExtractValue(parameter.Code, decoded, out var value))
+                {
+                    Log.Information($"Trying to convert {value} to {typeof(T)}");
                     return (T)Convert.ChangeType(value, typeof(T));
+                }
             }
 
             return default;
@@ -179,14 +194,15 @@
 
             if (decoded.StartsWith(parameter + "="))
             {
+                Log.Debug($"Answer does match requested parameter: {parameter}");
                 var startIndex = parameter.Length + 1;
-                var indexOfNull = decoded.IndexOf("\0", startIndex, StringComparison.InvariantCulture);
+                var indexOfNull = decoded.IndexOfAny(new []{'\0','?'}, startIndex);
+                Log.Debug($"Start: {startIndex}, End: {indexOfNull}");
 
                 value = decoded.Substring(startIndex, indexOfNull - startIndex);
                 Log.Debug($"Value: {value}");
-                {
-                    return true;
-                }
+
+                return true;
             }
 
             return false;

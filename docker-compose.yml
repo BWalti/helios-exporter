@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  helios-poc:
+    image: ${DOCKER_REGISTRY}heliospoc
+    build:
+      context: .
+      dockerfile: Helios-PoC/Dockerfile
+    ports:
+      - 18080:49091/tcp
