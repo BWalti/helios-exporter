@@ -20,15 +20,6 @@
 
     using Serilog;
 
-    public static class HeliosDefaults
-    {
-        public const int Offset = 1;
-
-        public const int Port = 502;
-
-        public const byte SlaveAddress = 180;
-    }
-
     public class Program
     {
         private const int TimeoutMs = 2000;
@@ -75,26 +66,26 @@
                                 {
                                     Log.Information("Querying temperatures...");
 
-                                    var uhrzeit = await QueryHeliosValue(client, HeliosVariables.Uhrzeit);
+                                    var uhrzeit = await QueryHeliosValue(client, HeliosParameters.Uhrzeit);
 
                                     var aussenluft = await QueryHeliosValue(
                                                          client,
-                                                         HeliosVariables.AussenluftTemperatur);
+                                                         HeliosParameters.AussenluftTemperatur);
                                     temperaturAussenluft.Set(aussenluft);
 
-                                    var zuluft = await QueryHeliosValue(client, HeliosVariables.ZuluftTemperatur);
+                                    var zuluft = await QueryHeliosValue(client, HeliosParameters.ZuluftTemperatur);
                                     temperaturZuluft.Set(zuluft);
 
-                                    var fortluft = await QueryHeliosValue(client, HeliosVariables.FortluftTemperatur);
+                                    var fortluft = await QueryHeliosValue(client, HeliosParameters.FortluftTemperatur);
                                     temperaturFortluft.Set(fortluft);
 
-                                    var abluft = await QueryHeliosValue(client, HeliosVariables.AbluftTemperatur);
+                                    var abluft = await QueryHeliosValue(client, HeliosParameters.AbluftTemperatur);
                                     temperaturAbluft.Set(abluft);
 
-                                    var a = await QueryHeliosValue(client, HeliosVariables.Lüfterstufe);
+                                    var a = await QueryHeliosValue(client, HeliosParameters.Lüfterstufe);
                                     lüfterStufe.Set(a);
 
-                                    var b = await QueryHeliosValue(client, HeliosVariables.ProzentualeLüfterstufe);
+                                    var b = await QueryHeliosValue(client, HeliosParameters.ProzentualeLüfterstufe);
                                     prozentualeLüfterStufe.Set(b / (double)100);
 
                                     Log.Information($"{uhrzeit} - {aussenluft} / {zuluft} / {fortluft} / {abluft}");

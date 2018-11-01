@@ -6,7 +6,7 @@
 namespace Helios_PoC
 {
     // see reference: https://www.easycontrols.net/en/service/downloads/send/4-software/16-modbus-dokumentation-f%C3%BCr-kwl-easycontrols-ger%C3%A4te
-    public static class HeliosVariables
+    public static class HeliosParameters
     {
         public static VariableDeclaration<uint> AbgegebeneLeistungNachheizung { get; } = new VariableDeclaration<uint>(
             "v01109",
