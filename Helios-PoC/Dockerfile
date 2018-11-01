@@ -16,5 +16,5 @@ RUN dotnet publish Helios-PoC.csproj -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-EXPOSE 49091
+EXPOSE 9091
 ENTRYPOINT ["dotnet", "Helios-PoC.dll"]

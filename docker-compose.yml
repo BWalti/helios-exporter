@@ -7,4 +7,6 @@ services:
       context: .
       dockerfile: Helios-PoC/Dockerfile
     ports:
-      - 18080:49091/tcp
+      - 80:9091/tcp
+    environment:
+      - HeliosIP='192.168.0.228'

@@ -24,16 +24,37 @@
     {
         private const int TimeoutMs = 2000;
 
-        private static readonly IPAddress IpAddress = IPAddress.Parse("192.168.0.228");
+        private static IPAddress IpAddress;
 
         public static async Task Main(string[] args)
         {
-            ConfigureApplication();
             ConfigureServices();
 
-            var metricServer = new MetricServer("0.0.0.0", 49091);
+            IpAddress = IPAddress.Parse(Configuration["HeliosIP"]);
+
+            var metricServer = new MetricServer("0.0.0.0", 9091);
             metricServer.Start();
 
+            var cts = new CancellationTokenSource();
+
+            await Task.WhenAll(
+                //Task.Run(
+                //    () =>
+                //        {
+                //            while (Console.ReadKey().Key != ConsoleKey.Escape)
+                //            {
+                //            }
+
+                //            cts.Cancel();
+                //        }),
+                StartUpdateIntervall(cts.Token));
+
+            metricServer.Stop();
+            Log.CloseAndFlush();
+        }
+
+        private static async Task StartUpdateIntervall(CancellationToken cancellationToken)
+        {
             var temperaturAussenluft = Metrics.CreateGauge("temp:from:outside", "Aussenluft Temperatur");
             var temperaturZuluft = Metrics.CreateGauge("temp:to:inside", "Zuluft Temperatur");
             var temperaturFortluft = Metrics.CreateGauge("temp:to:outside", "Fortluft Temperatur");
@@ -42,90 +63,69 @@
             var lüfterStufe = Metrics.CreateGauge("fan:level", "Lüfterstufe");
             var prozentualeLüfterStufe = Metrics.CreateGauge("fan:percentage", "Lüfterstufe");
 
-            var cts = new CancellationTokenSource();
+            using (var client = new TcpClient())
+            {
+                client.ReceiveTimeout = TimeoutMs;
+                client.SendTimeout = TimeoutMs;
+                client.Client.Connect(IpAddress, HeliosDefaults.Port);
 
-            await Task.WhenAll(
-                Task.Run(
-                    () =>
-                        {
-                            //while(Console.ReadKey().Key != ConsoleKey.Escape)
-                            //{
-                            //}
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    Log.Information("Querying temperatures...");
 
-                            //cts.Cancel();
-                        }),
-                Task.Run(
-                    async () =>
-                        {
-                            using (var client = new TcpClient())
-                            {
-                                client.ReceiveTimeout = TimeoutMs;
-                                client.SendTimeout = TimeoutMs;
-                                client.Client.Connect(IpAddress, HeliosDefaults.Port);
+                    var uhrzeit = await QueryHeliosValue(client, HeliosParameters.Uhrzeit);
 
-                                while (!cts.IsCancellationRequested)
-                                {
-                                    Log.Information("Querying temperatures...");
+                    var aussenluft = await QueryHeliosValue(
+                        client,
+                        HeliosParameters.AussenluftTemperatur);
+                    temperaturAussenluft.Set(aussenluft);
 
-                                    var uhrzeit = await QueryHeliosValue(client, HeliosParameters.Uhrzeit);
+                    var zuluft = await QueryHeliosValue(client, HeliosParameters.ZuluftTemperatur);
+                    temperaturZuluft.Set(zuluft);
 
-                                    var aussenluft = await QueryHeliosValue(
-                                                         client,
-                                                         HeliosParameters.AussenluftTemperatur);
-                                    temperaturAussenluft.Set(aussenluft);
+                    var fortluft = await QueryHeliosValue(client, HeliosParameters.FortluftTemperatur);
+                    temperaturFortluft.Set(fortluft);
 
-                                    var zuluft = await QueryHeliosValue(client, HeliosParameters.ZuluftTemperatur);
-                                    temperaturZuluft.Set(zuluft);
+                    var abluft = await QueryHeliosValue(client, HeliosParameters.AbluftTemperatur);
+                    temperaturAbluft.Set(abluft);
 
-                                    var fortluft = await QueryHeliosValue(client, HeliosParameters.FortluftTemperatur);
-                                    temperaturFortluft.Set(fortluft);
+                    var a = await QueryHeliosValue(client, HeliosParameters.Lüfterstufe);
+                    lüfterStufe.Set(a);
 
-                                    var abluft = await QueryHeliosValue(client, HeliosParameters.AbluftTemperatur);
-                                    temperaturAbluft.Set(abluft);
+                    var b = await QueryHeliosValue(client, HeliosParameters.ProzentualeLüfterstufe);
+                    prozentualeLüfterStufe.Set(b / (double) 100);
 
-                                    var a = await QueryHeliosValue(client, HeliosParameters.Lüfterstufe);
-                                    lüfterStufe.Set(a);
-
-                                    var b = await QueryHeliosValue(client, HeliosParameters.ProzentualeLüfterstufe);
-                                    prozentualeLüfterStufe.Set(b / (double)100);
-
-                                    Log.Information($"{uhrzeit} - {aussenluft} / {zuluft} / {fortluft} / {abluft}");
-                                    try
-                                    {
-                                        await Task.Delay(TimeSpan.FromSeconds(30), cts.Token);
-                                    }
-                                    catch (TaskCanceledException)
-                                    {
-                                    }
-                                }
-                            }
-                        }));
-
-            metricServer.Stop();
-            Log.CloseAndFlush();
-        }
-
-        private static void ConfigureApplication()
-        {
-            var ci = new CultureInfo("en-US");
-            Thread.CurrentThread.CurrentCulture = ci;
-            Thread.CurrentThread.CurrentUICulture = ci;
-
-            var changeType = Convert.ChangeType("14.0", typeof(float));
+                    Log.Information($"{uhrzeit} - {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                    }
+                }
+            }
         }
 
         private static void ConfigureServices()
         {
             // Read the application settings file.
-            var configuration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", true, true).AddEnvironmentVariables().Build();
+            Configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", true, true)
+                .AddEnvironmentVariables()
+                .Build();
 
             // Setting up the static Serilog logger.
-            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(configuration).CreateLogger();
+            Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(Configuration).CreateLogger();
 
             // Set the default culture.
-            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            var ci = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = ci;
+            Thread.CurrentThread.CurrentUICulture = ci;
         }
+
+        public static IConfigurationRoot Configuration { get; set; }
 
         private static byte[] FromShortArray(ushort[] shorts)
         {
@@ -157,11 +157,11 @@
                 bytes = FromShortArray(result);
                 var decoded = Encoding.ASCII.GetString(bytes);
 
-                Log.Information($"Decoded: {decoded}");
+                Log.Debug($"Decoded: {decoded}");
 
                 if (TryExtractValue(parameter.Code, decoded, out var value))
                 {
-                    Log.Information($"Trying to convert {value} to {typeof(T)}");
+                    Log.Debug($"Trying to convert {value} to {typeof(T)}");
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
             }
