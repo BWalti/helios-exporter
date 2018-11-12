@@ -24,13 +24,16 @@
     {
         private const int TimeoutMs = 2000;
 
-        private static IPAddress IpAddress;
+        private static IPAddress ipAddress;
+
+        protected internal static TimeSpan QueryInterval;
 
         public static async Task Main(string[] args)
         {
             ConfigureServices();
 
-            IpAddress = IPAddress.Parse(Configuration["HeliosIP"]);
+            QueryInterval = TimeSpan.FromSeconds(double.Parse(Configuration["QueryInterval"]));
+            ipAddress = IPAddress.Parse(Configuration["HeliosIP"]);
 
             var metricServer = new MetricServer("0.0.0.0", 9091);
             metricServer.Start();
@@ -47,58 +50,56 @@
 
                 //            cts.Cancel();
                 //        }),
-                StartUpdateIntervall(cts.Token));
+                StartUpdateInterval(cts.Token));
 
             metricServer.Stop();
             Log.CloseAndFlush();
         }
 
-        private static async Task StartUpdateIntervall(CancellationToken cancellationToken)
+        private static async Task StartUpdateInterval(CancellationToken cancellationToken)
         {
-            var temperaturAussenluft = Metrics.CreateGauge("temp:from:outside", "Aussenluft Temperatur");
-            var temperaturZuluft = Metrics.CreateGauge("temp:to:inside", "Zuluft Temperatur");
-            var temperaturFortluft = Metrics.CreateGauge("temp:to:outside", "Fortluft Temperatur");
-            var temperaturAbluft = Metrics.CreateGauge("temp:from:inside", "Abluft Temperatur");
+            var outside = Metrics.CreateGauge("helios_outside_air_temperature", "Aussenluft Temperatur");
+            var incoming = Metrics.CreateGauge("helios_incoming_air_temperature", "Zuluft Temperatur");
+            var exit = Metrics.CreateGauge("helios_exit_air_temperature", "Fortluft Temperatur");
+            var outgoing = Metrics.CreateGauge("helios_outgoing_air_temperature", "Abluft Temperatur");
 
-            var lüfterStufe = Metrics.CreateGauge("fan:level", "Lüfterstufe");
-            var prozentualeLüfterStufe = Metrics.CreateGauge("fan:percentage", "Lüfterstufe");
+            var fanLevel = Metrics.CreateGauge("helios_fans_level", "Lüfterstufe");
+            var fanPercentage = Metrics.CreateGauge("helios_fans_percentage", "Lüfterstufe");
 
             using (var client = new TcpClient())
             {
                 client.ReceiveTimeout = TimeoutMs;
                 client.SendTimeout = TimeoutMs;
-                client.Client.Connect(IpAddress, HeliosDefaults.Port);
+                client.Client.Connect(ipAddress, HeliosDefaults.Port);
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     Log.Information("Querying temperatures...");
 
-                    var uhrzeit = await QueryHeliosValue(client, HeliosParameters.Uhrzeit);
+                    var timestamp = await QueryHeliosValue(client, HeliosParameters.Uhrzeit);
 
-                    var aussenluft = await QueryHeliosValue(
-                        client,
-                        HeliosParameters.AussenluftTemperatur);
-                    temperaturAussenluft.Set(aussenluft);
+                    var outsideValue = await QueryHeliosValue(client, HeliosParameters.AussenluftTemperatur);
+                    outside.Set(outsideValue);
 
-                    var zuluft = await QueryHeliosValue(client, HeliosParameters.ZuluftTemperatur);
-                    temperaturZuluft.Set(zuluft);
+                    var incomingValue = await QueryHeliosValue(client, HeliosParameters.ZuluftTemperatur);
+                    incoming.Set(incomingValue);
 
-                    var fortluft = await QueryHeliosValue(client, HeliosParameters.FortluftTemperatur);
-                    temperaturFortluft.Set(fortluft);
+                    var exitValue = await QueryHeliosValue(client, HeliosParameters.FortluftTemperatur);
+                    exit.Set(exitValue);
 
-                    var abluft = await QueryHeliosValue(client, HeliosParameters.AbluftTemperatur);
-                    temperaturAbluft.Set(abluft);
+                    var outgoingValue = await QueryHeliosValue(client, HeliosParameters.AbluftTemperatur);
+                    outgoing.Set(outgoingValue);
 
-                    var a = await QueryHeliosValue(client, HeliosParameters.Lüfterstufe);
-                    lüfterStufe.Set(a);
+                    var fanLevelValue = await QueryHeliosValue(client, HeliosParameters.Lüfterstufe);
+                    fanLevel.Set(fanLevelValue);
 
-                    var b = await QueryHeliosValue(client, HeliosParameters.ProzentualeLüfterstufe);
-                    prozentualeLüfterStufe.Set(b / (double) 100);
+                    var fanPercentageValue = await QueryHeliosValue(client, HeliosParameters.ProzentualeLüfterstufe);
+                    fanPercentage.Set(fanPercentageValue / (double) 100);
 
-                    Log.Information($"{uhrzeit} - {aussenluft} / {zuluft} / {fortluft} / {abluft}");
+                    Log.Information($"{timestamp} - {outsideValue} / {incomingValue} / {exitValue} / {outgoingValue}");
                     try
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                        await Task.Delay(QueryInterval, cancellationToken);
                     }
                     catch (TaskCanceledException)
                     {
