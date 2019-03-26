@@ -1,11 +1,29 @@
-﻿using System;
-
-namespace Helios_PoC
+﻿namespace Helios_PoC
 {
+    using System;
+
     public class VariableDeclaration
     {
-        protected object min;
         protected object max;
+
+        protected object min;
+
+        public VariableDeclaration(string code,
+                                   ushort registerCount,
+                                   string description,
+                                   AccessMode access,
+                                   Type valueType,
+                                   string min = null,
+                                   string max = null)
+        {
+            this.Code = code;
+            this.RegisterCount = registerCount;
+            this.Description = description;
+            this.Access = access;
+            this.ValueType = valueType;
+
+            this.SetMinMaxValues(valueType, min, max);
+        }
 
         public string Code { get; }
 
@@ -16,18 +34,6 @@ namespace Helios_PoC
         public AccessMode Access { get; }
 
         public Type ValueType { get; }
-
-        public VariableDeclaration(string code, ushort registerCount, string description, AccessMode access,
-            Type valueType, string min=null, string max=null)
-        {
-            Code = code;
-            RegisterCount = registerCount;
-            Description = description;
-            Access = access;
-            ValueType = valueType;
-
-            SetMinMaxValues(valueType, min, max);
-        }
 
         private void SetMinMaxValues(Type valueType, string min, string max)
         {
@@ -61,15 +67,20 @@ namespace Helios_PoC
 
     public class VariableDeclaration<T> : VariableDeclaration
     {
-        public VariableDeclaration(string code, ushort registerCount, string description, AccessMode access, T min=default, T max=default) 
+        public VariableDeclaration(string code,
+                                   ushort registerCount,
+                                   string description,
+                                   AccessMode access,
+                                   T min = default,
+                                   T max = default)
             : base(code, registerCount, description, access, typeof(T))
         {
             this.min = min;
             this.max = max;
         }
 
-        public T Min => (T) this.min;
+        public T Min => (T)this.min;
 
-        public T Max => (T) this.max;
+        public T Max => (T)this.max;
     }
 }

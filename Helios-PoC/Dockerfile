@@ -1,7 +1,7 @@
-FROM microsoft/dotnet:2.1-runtime AS base
+FROM mcr.microsoft.com/dotnet/core/runtime:2.2 AS base
 WORKDIR /app
 
-FROM microsoft/dotnet:2.1-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build
 WORKDIR /src
 COPY Helios-PoC/Helios-PoC.csproj Helios-PoC/
 COPY NModbusLib/NModbusLib.csproj NModbusLib/
