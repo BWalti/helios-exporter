@@ -4,7 +4,6 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build
 WORKDIR /src
 COPY Helios-PoC/Helios-PoC.csproj Helios-PoC/
-COPY NModbusLib/NModbusLib.csproj NModbusLib/
 RUN dotnet restore Helios-PoC/Helios-PoC.csproj
 COPY . .
 WORKDIR /src/Helios-PoC
