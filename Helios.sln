@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32414.318
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Helios.Modbus", "src\Helios.Modbus\Helios.Modbus.csproj", "{A1F8EBBB-36E7-4C69-ADEC-51043047919B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Helios.Api", "src\Helios.Api\Helios.Api.csproj", "{70B145E9-B5F0-4D1A-9E21-FDD76E04E32F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7B0D4428-B195-426D-A55F-AC5C8DCC4C14}"
+	ProjectSection(SolutionItems) = preProject
+		Dockerfile = Dockerfile
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1F8EBBB-36E7-4C69-ADEC-51043047919B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1F8EBBB-36E7-4C69-ADEC-51043047919B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1F8EBBB-36E7-4C69-ADEC-51043047919B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1F8EBBB-36E7-4C69-ADEC-51043047919B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70B145E9-B5F0-4D1A-9E21-FDD76E04E32F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70B145E9-B5F0-4D1A-9E21-FDD76E04E32F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70B145E9-B5F0-4D1A-9E21-FDD76E04E32F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70B145E9-B5F0-4D1A-9E21-FDD76E04E32F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5DBC29DE-0E45-4E1B-B2D1-D3976E90E37B}
+	EndGlobalSection
+EndGlobal
