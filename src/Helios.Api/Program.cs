@@ -45,6 +45,7 @@ try
 
     app.MapHealthChecks("/healthz");
     app.MapGet("/", () => "Hello World!");
+    app.MapGet("/helios", (HeliosMetricsExporterState state) => state);
     app.MapMetrics();
     app.Run();
 }
