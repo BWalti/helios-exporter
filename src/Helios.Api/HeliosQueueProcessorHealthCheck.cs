@@ -2,7 +2,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Helios.Api;
 
-public class HeliosMetricsExporterHealthCheck(HeliosMetricsExporterState state) : IHealthCheck
+public class HeliosQueueProcessorHealthCheck(HeliosQueueProcessorState state) : IHealthCheck
 {
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = new())
     {

@@ -6,12 +6,7 @@ using NodaTime.Extensions;
 
 namespace Helios.Api;
 
-public class HeliosMetricsExporterOptions
-{
-    public int IntervallSeconds { get; set; }
-}
-
-public class HeliosMetricsExporter(HeliosClient client, IOptions<HeliosMetricsExporterOptions> options,
+public class HeliosMetricsExporter(HeliosTasksCollection queue, IOptions<HeliosMetricsExporterOptions> options,
     ILogger<HeliosMetricsExporter> logger, HeliosMetricsExporterState state) : IHostedService
 {
     private static readonly DateTimeZone Zurich = DateTimeZoneProviders.Tzdb["Europe/Zurich"];
@@ -38,53 +33,90 @@ public class HeliosMetricsExporter(HeliosClient client, IOptions<HeliosMetricsEx
         {
             while (!_cts.IsCancellationRequested)
             {
-                var timestamp = await client.Query(HeliosParameters.Uhrzeit);
+                var timeStampTask = new TaskCompletionSource<string?>();
+                queue.Add(async client =>
+                {
+                    var timestamp = await client.Query(HeliosParameters.Uhrzeit);
+                    timeStampTask.SetResult(timestamp);
+                });
+
+                var timestamp = await timeStampTask.Task;
                 if (timestamp == null)
                 {
+                    logger.LogInformation("Timestamp was invalid!");
                     await Task.Delay(TimeSpan.FromSeconds(1));
                     continue;
                 }
 
-                var zurichTime = DateTimeOffset.UtcNow
-                    .ToZonedDateTime()
-                    .WithZone(Zurich)
-                    .TimeOfDay;
-
-                var parsedTimeOnly = TimeOnly.Parse(timestamp).ToLocalTime();
-
-                var delta = (zurichTime - parsedTimeOnly).ToDuration();
-                if (Math.Abs(delta.TotalMinutes) > 2)
+                var timeDeltaFixedTcs = new TaskCompletionSource<bool>();
+                queue.Add(async client =>
                 {
-                    logger.LogInformation(
-                        "Going to fix time of helios ({heliosTime}), as it deviated from real time ({realTime}).",
-                        timestamp, zurichTime);
-                    await client.Write(HeliosParameters.Uhrzeit,
-                        zurichTime.ToString("HH:mm:ss", CultureInfo.CurrentCulture));
+                    var zurichTime = DateTimeOffset.UtcNow
+                        .ToZonedDateTime()
+                        .WithZone(Zurich)
+                        .TimeOfDay;
+
+                    var parsedTimeOnly = TimeOnly.Parse(timestamp).ToLocalTime();
+
+                    var delta = (zurichTime - parsedTimeOnly).ToDuration();
+                    if (Math.Abs(delta.TotalMinutes) > 2)
+                    {
+                        logger.LogInformation(
+                            "Going to fix time of helios ({heliosTime}), as it deviated from real time ({realTime}).",
+                            timestamp, zurichTime);
+                        await client.Write(HeliosParameters.Uhrzeit,
+                            zurichTime.ToString("HH:mm:ss", CultureInfo.CurrentCulture));
+                        
+                        timeDeltaFixedTcs.SetResult(true);
+                    }
+                    else
+                    {
+                        timeDeltaFixedTcs.SetResult(false);
+                    }
+                });
+
+                if (await timeDeltaFixedTcs.Task)
+                {
                     continue;
                 }
 
-                var outsideValue = await client.Query(HeliosParameters.AussenluftTemperatur);
-                state.SetOutside(outsideValue);
+                var metricsTaskCompletionSource = new TaskCompletionSource();
+                queue.Add(async client =>
+                {
+                    try
+                    {
+                        var outsideValue = await client.Query(HeliosParameters.AussenluftTemperatur);
+                        state.SetOutside(outsideValue);
 
-                var incomingValue = await client.Query(HeliosParameters.ZuluftTemperatur);
-                state.SetIncoming(incomingValue);
+                        var incomingValue = await client.Query(HeliosParameters.ZuluftTemperatur);
+                        state.SetIncoming(incomingValue);
 
-                var exitValue = await client.Query(HeliosParameters.FortluftTemperatur);
-                state.SetExit(exitValue);
+                        var exitValue = await client.Query(HeliosParameters.FortluftTemperatur);
+                        state.SetExit(exitValue);
 
-                var outgoingValue = await client.Query(HeliosParameters.AbluftTemperatur);
-                state.SetOutgoing(outgoingValue);
+                        var outgoingValue = await client.Query(HeliosParameters.AbluftTemperatur);
+                        state.SetOutgoing(outgoingValue);
 
-                var fanLevelValue = await client.Query(HeliosParameters.Luefterstufe);
-                state.SetFanLevel(fanLevelValue);
+                        var fanLevelValue = await client.Query(HeliosParameters.Luefterstufe);
+                        state.SetFanLevel(fanLevelValue);
 
-                var fanPercentageValue = await client.Query(HeliosParameters.ProzentualeLuefterstufe);
-                state.SetFanPercentage(fanPercentageValue / 100);
+                        var fanPercentageValue = await client.Query(HeliosParameters.ProzentualeLuefterstufe);
+                        state.SetFanPercentage(fanPercentageValue / 100);
 
-                logger.LogInformation("{timestamp} - {outsideValue} / {incomingValue} / {exitValue} / {outgoingValue}",
-                    timestamp, outsideValue, incomingValue, exitValue, outsideValue);
+                        logger.LogInformation(
+                            "{timestamp} - {outsideValue} / {incomingValue} / {exitValue} / {outgoingValue}",
+                            timestamp, outsideValue, incomingValue, exitValue, outsideValue);
 
-                state.SetHealthy(true);
+                        state.SetHealthy(true);
+                        metricsTaskCompletionSource.SetResult();
+                    }
+                    catch (Exception e)
+                    {
+                        metricsTaskCompletionSource.SetException(e);
+                    }
+                });
+
+                await metricsTaskCompletionSource.Task;
                 await Task.Delay(TimeSpan.FromSeconds(options.Value.IntervallSeconds), _cts.Token);
             }
         }
